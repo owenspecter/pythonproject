@@ -1,0 +1,244 @@
+
+from datetime import date
+import sqlite3 as sql 
+
+urunler = {}
+hasilat = {}
+bugun = date.today()
+
+
+def urungir():
+    
+    while True:
+        
+        urun_adi = input("Ürün adını giriniz\n")
+        
+        urun_fiyat = int(input("Ürün fiyatını giriniz\n"))
+         
+        while True:
+            
+            try:
+                sk_tarihi = input("Ürünün son kullanım tarihini giriniz YYYY-AA-GG \n")
+                
+                tarih = date.fromisoformat(sk_tarihi)
+                
+                break
+            
+            except ValueError:
+                
+                print("Geçersiz tarih formatı. YYYY-AA-GG formatında girin.")
+                
+                continue
+
+        
+        uretici_firma = input("Üretici firmanın adını giriniz\n")
+        
+        urun_bilgi = [urun_fiyat,tarih,uretici_firma]
+        
+        urunler.setdefault(urun_adi,urun_bilgi)
+        
+        veritabani = sql.connect('urun_veritabani.db')
+        imlec = veritabani.cursor()
+        imlec.execute("CREATE TABLE IF NOT EXISTS urunler (urun_adi,fiyat,sk_tarihi,uretici_firma)")
+        imlec.execute("INSERT INTO urunler VALUES (?,?,?,?)",(urun_adi,urun_bilgi[0],urun_bilgi[1],urun_bilgi[2]))
+        veritabani.commit()
+        veritabani.close()
+        
+        soru = input("Ürün eklemek istiyor musunuz?\n")
+        
+        if soru.lower() == "hayır":
+            break
+    
+    
+
+
+
+def barkod_okut():
+    fatura = 0
+    
+    while True:
+        
+        alinan_urun = input("Alınan ürünü yazınız\n")
+        
+        sorgu2=input("Ürün sözlükteyse 1, zaten veritabanında varsa 2 giriniz\n")
+        
+        tutar = 0
+        
+        if sorgu2 =="1":
+            
+            if alinan_urun in urunler.keys():
+                
+                if bugun>urunler[alinan_urun][1]:
+                    
+                    print("{} adlı ürünün son kullanma tarihi geçmiştir".format(alinan_urun))
+                    continue
+                
+                else:
+                    tutar = urunler[alinan_urun][0]
+                    
+                    fatura += urunler[alinan_urun][0]
+                    
+            else:
+                
+                print("Böyle bir ürün bulunmamaktadır.")
+                
+                continue
+            
+        elif sorgu2 =="2":
+            veritabani = sql.connect('urun_veritabani.db')
+            imlec = veritabani.cursor()
+            imlec.execute("SELECT * FROM urunler")
+            datalar = imlec.fetchall()
+            veritabani.close()
+            
+            
+            for i in range(len(datalar)):
+                
+                if alinan_urun in datalar[i][0]:
+                    
+                    if bugun>date.fromisoformat(datalar[i][2]):
+                        
+                        print("{} adlı ürünün son kullanma tarihi geçmiştir".format(alinan_urun))
+                        break
+                    
+                    else:
+                        tutar = datalar[i][1]
+                        
+                        fatura += datalar[i][1]
+                        
+                        break
+                        
+                    
+        if tutar>0:
+            
+         hasilat.setdefault(alinan_urun,tutar)   
+        
+        soru2 = input("Başka ürün okutulacak mı?\n")
+        
+        if soru2.lower() == "hayır":
+            break
+        
+    return fatura
+    
+
+
+
+def firma_adi(ad):
+    sorgu3 = input("Firma sözlüğe kayıtlıysa 1, veritabanına kayıtlı ise 2 giriniz\n")
+    
+    sayac = 0
+    
+    if sorgu3 =="1":
+        
+        liste = list(urunler.values())
+    
+        for i in range(len(liste)):
+            
+            if ad in liste[i][2]:
+                sayac += 1
+                
+    
+    elif sorgu3 =="2":
+        veritabani = sql.connect('urun_veritabani.db')
+        imlec = veritabani.cursor()
+        imlec.execute("SELECT * FROM urunler")
+        datalar = imlec.fetchall()
+        veritabani.close()
+        
+        for i in range(len(datalar)):
+            
+            if ad == datalar[i][3]:
+                sayac += 1
+        
+            
+        return sayac      
+    
+    
+    
+    
+def hasilathesapla():
+    toplam = 0
+
+    for i in hasilat.keys():
+        
+        toplam += hasilat[i]
+        
+    return toplam
+
+
+
+
+def urunbul(urunismi):
+    
+    sorgu4 = input("Ürün sözlükteyse 1, veritabanında ise 2 yi giriniz\n")
+    
+    if sorgu4 =="2":
+        
+        veritabani = sql.connect('urun_veritabani.db')
+        imlec = veritabani.cursor()
+        imlec.execute("SELECT * FROM urunler")
+        datalar = imlec.fetchall()
+        veritabani.close()
+        
+        for i in range(len(datalar)):
+            
+            if urunismi == datalar[i][0]:
+                print("""{} ismine ait ürünün\n\bFiyatı: {}\nSon kullanma tarihi: {}
+    Üretici Firması: {}""".format(urunismi,datalar[i][1],datalar[i][2],datalar[i][3]))
+    
+    elif sorgu4 =="1":
+        
+        if urunismi in urunler.keys():
+            print("""{} ismine ait ürünün\n\bFiyatı: {}\nSon kullanma tarihi: {}
+Üretici Firması: {}\n""".format(urunismi,urunler[urunismi][0],urunler[urunismi][1],urunler[urunismi][2]))
+        
+    
+    
+    
+    
+    
+
+print("***Alışveriş Sistemine Hoşgeldiniz***\n")
+
+while True:
+
+    tercih = input("""1-Ürün Gir\n2-Barkod Okut\n3-Firmaya Göre Arat\n4-Güncel Hasılat
+5-Ürüne Göre Arat\n6-Çıkış\n""")
+    
+    if tercih == "1":
+        urungir()
+        
+    elif tercih == "2":      
+        totalfiyat=barkod_okut()
+        
+        print("Fatura değeri: {}".format(totalfiyat))
+        
+    elif tercih == "3":      
+        isim = input("Ürün sayısına bakmak istediğiniz firmanın adını giriniz\n")
+        
+        sayac = firma_adi(isim)
+        
+        print("{} firmasina ait urun sayisi: ".format(isim),sayac)
+        
+    
+    elif tercih == "4":     
+        toplam_hasilat = hasilathesapla()
+        
+        print("Toplam hasılat: {} TL ".format(toplam_hasilat))
+        
+        
+    elif tercih == "5":
+        urun_adi = input("Aramak istediğiniz ürünün adını yazınız\n")
+        urunbul(urun_adi)
+        
+        
+    elif tercih == "6":
+        quit()
+        
+        
+    else:
+        print("Lütfen 1-6 arası sayı giriniz\n")
+        continue
+        
+    
+    
