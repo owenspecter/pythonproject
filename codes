@@ -1,4 +1,3 @@
-
 from datetime import date
 import sqlite3 as sql 
 
@@ -20,14 +19,12 @@ def urungir():
             try:
                 sk_tarihi = input("Ürünün son kullanım tarihini giriniz YYYY-AA-GG \n")
                 
-                tarih = date.fromisoformat(sk_tarihi)
-                
+                tarih = date.fromisoformat(sk_tarihi)   
                 break
             
             except ValueError:
                 
                 print("Geçersiz tarih formatı. YYYY-AA-GG formatında girin.")
-                
                 continue
 
         
@@ -58,7 +55,10 @@ def barkod_okut():
     
     while True:
         
-        alinan_urun = input("Alınan ürünü yazınız\n")
+        alinan_urun = input("Alınan ürünü yazınız(çıkmak için q giriniz)\n")
+        
+        if alinan_urun == "q":
+            break
         
         sorgu2=input("Ürün sözlükteyse 1, zaten veritabanında varsa 2 giriniz\n")
         
@@ -81,7 +81,6 @@ def barkod_okut():
             else:
                 
                 print("Böyle bir ürün bulunmamaktadır.")
-                
                 continue
             
         elif sorgu2 =="2":
@@ -91,6 +90,8 @@ def barkod_okut():
             datalar = imlec.fetchall()
             veritabani.close()
             
+            sk_kontrol = True
+            
             
             for i in range(len(datalar)):
                 
@@ -99,15 +100,19 @@ def barkod_okut():
                     if bugun>date.fromisoformat(datalar[i][2]):
                         
                         print("{} adlı ürünün son kullanma tarihi geçmiştir".format(alinan_urun))
+                        
+                        sk_kontrol = False
                         break
                     
                     else:
                         tutar = datalar[i][1]
                         
                         fatura += datalar[i][1]
-                        
                         break
-                        
+        
+        if sk_kontrol == False:
+            continue
+            
                     
         if tutar>0:
             
@@ -117,6 +122,7 @@ def barkod_okut():
         
         if soru2.lower() == "hayır":
             break
+        
         
     return fatura
     
@@ -197,7 +203,6 @@ def urunbul(urunismi):
     
     
     
-
 print("***Alışveriş Sistemine Hoşgeldiniz***\n")
 
 while True:
@@ -241,4 +246,6 @@ while True:
         continue
         
     
+    
+
     
