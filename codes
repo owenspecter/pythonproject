@@ -1,3 +1,4 @@
+
 from datetime import date
 import sqlite3 as sql 
 
@@ -65,6 +66,7 @@ def barkod_okut():
         tutar = 0
         
         if sorgu2 =="1":
+            sk_kontrol = True
             
             if alinan_urun in urunler.keys():
                 
@@ -157,7 +159,7 @@ def firma_adi(ad):
                 sayac += 1
         
             
-        return sayac      
+    return sayac      
     
     
     
@@ -246,6 +248,4 @@ while True:
         continue
         
     
-    
-
     
